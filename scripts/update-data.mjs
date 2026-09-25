@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -59,6 +59,24 @@ const items = rawTableRows(itemsHtml)
   .sort((a, b) => a.ptBrName.localeCompare(b.ptBrName, "pt-BR", { sensitivity: "base" }));
 
 const version = itemsHtml.match(/generated from Valheim ([^<\s]+)/i)?.[1] ?? "desconhecida";
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const output = resolve(scriptDir, "../dist/items.json");
+
+try {
+  const current = JSON.parse(await readFile(output, "utf8"));
+  const sameVersion = current.meta?.valheimVersion === version;
+  const sameItems = JSON.stringify(current.items) === JSON.stringify(items);
+
+  if (sameVersion && sameItems) {
+    console.log(`A base já está atualizada: ${items.length} itens do Valheim ${version}.`);
+    process.exit(0);
+  }
+} catch (error) {
+  if (error.code !== "ENOENT") {
+    console.warn("A base atual não pôde ser comparada e será reconstruída.");
+  }
+}
+
 const payload = {
   meta: {
     generatedAt: new Date().toISOString(),
@@ -71,8 +89,6 @@ const payload = {
   items,
 };
 
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const output = resolve(scriptDir, "../dist/items.json");
 await mkdir(dirname(output), { recursive: true });
 await writeFile(output, JSON.stringify(payload));
 console.log(`Gerados ${items.length} itens (${payload.meta.localized} localizados) para Valheim ${version}.`);
