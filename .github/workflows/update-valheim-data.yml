@@ -1,0 +1,45 @@
+name: Atualizar base do Valheim
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 7 * * *"
+      timezone: "America/Sao_Paulo"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-valheim-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Verificar dados do Jotunn
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Atualizar a base
+        run: node scripts/update-data.mjs
+
+      - name: Publicar alterações
+        shell: bash
+        run: |
+          if git diff --quiet -- dist/items.json; then
+            echo "Nenhuma alteração encontrada."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/items.json
+          git commit -m "Atualiza base de itens do Valheim"
+          git push
