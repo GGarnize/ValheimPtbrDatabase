@@ -1,0 +1,27 @@
+{
+    admin off
+    persist_config off
+    auto_https off
+    log {
+        format json
+    }
+    servers {
+        trusted_proxies static 0.0.0.0/0 ::/0
+    }
+}
+
+:{$PORT:3000} {
+    log {
+        format json
+    }
+
+    root * /srv
+    encode gzip zstd
+
+    @health path /health
+    respond @health 200
+
+    try_files {path} /index.html
+    file_server
+}
+
