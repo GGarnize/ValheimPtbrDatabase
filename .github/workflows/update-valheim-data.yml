@@ -9,8 +9,8 @@ on:
       - ".github/workflows/update-valheim-data.yml"
       - "scripts/update-data.mjs"
   schedule:
-    - cron: "17 7 * * *"
-      timezone: "America/Sao_Paulo"
+    # 10:17 UTC corresponde a 07:17 em Sao Paulo.
+    - cron: "17 10 * * *"
 
 permissions:
   contents: write
